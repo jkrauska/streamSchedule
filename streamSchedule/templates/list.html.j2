@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Set the page to refresh every 30 seconds -->
+    <meta http-equiv="refresh" content="900">
+    <title>Live Stream</title>
+</head>
+
+<body>
+    <div class="text-center">
+        <img src="{{ url_for('static', filename='images/field.jpg') }}" class="img-fluid" alt="field">
+    </div>
+    <div class="text-center">
+        Field Preview - 5m
+    </div>
+
+    <div>
+        <table class="table table-hover table-sm table-responsive">
+            <thead class="table-dark">
+                <tr>
+                    <th scope="col">Name</th>
+                    <th scope="col">Date</th>
+                    <th scope="col">Start</th>
+                    <th scope="col">Time</th>
+                    <th scope="col">Key</th>
+                    <th scope="col">Control</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for job in jobs %}
+
+                {# Check if the substring 'skip' is in the current item #}
+                {% if 'HIDDEN' not in job.id %}
+                <tr scope="row">
+                    <td>{{ job.id }}</td>
+                    <td>{{ job.next_run_time | datetime('%m-%d') }}</td>
+                    <td>{{ job.next_run_time | datetime('%H:%M') }}</td>
+                    <td>
+                        {% if job.kwargs.duration is defined %}
+                        {{ (job.kwargs.duration / 60 )| round | int }}
+                        {% else %}
+                        N/A
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if job.kwargs.key is defined %}
+                        {{ job.kwargs.key[13:][:6] }}...
+                        {% else %}
+                        N/A
+                        {% endif %}
+                    </td> <!-- first six unique -->
+                    <td><i class="bi bi-x-octagon-fill" style="color: red; font-size: 1rem;"></i></td>
+                </tr>
+                {% endif %}
+
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+
+    <div class="d-flex container mt-5 justify-content-center ">
+        <!-- Link styled as a button -->
+        <a href="/add" class="btn btn-success btn-lg" style="padding: 20px 40px; font-size: 20px;">
+            <i class="bi bi-plus-circle-fill" style="color: white; font-size: 1rem;"></i> Schedule A Stream
+        </a>
+    </div>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
+
+
+</body>
+
+</html>
