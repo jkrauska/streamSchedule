@@ -10,7 +10,7 @@
 
 <body>
     <div class="container mt-5">
-        <h2>New Stream Request</h2>
+        <h2>New Stream Setup</h2>
         <form action="/submit" method="POST">
             <div class="mb-3">
                 <label for="text-input" class="form-label">Team Name</label>
@@ -21,8 +21,12 @@
                 <input type="date" class="form-control" id="date-input" name="date">
             </div>
             <div class="mb-3">
-                <label for="time-input" class="form-label">Game Start Time (Stream will start 5m before)</label>
-                <input type="time" class="form-control" id="time-input" name="time">
+                <label for="startTime" class="form-label">Stream Start Time (ideally start BEFORE game)</label>
+                <input type="time" class="form-control" id="startTime" name="startTime">
+            </div>
+            <div class="mb-3">
+                <label for="endTime" class="form-label">Stream End Time</label>
+                <input type="time" class="form-control" id="endTime" name="endTime">
             </div>
             <div class="mb-3">
                 <label for="text-input" class="form-label">
@@ -44,6 +48,35 @@
             How
             to Get Your Stream Key</a>
     </div>
+
+
+    <!-- Auto set endtime-->
+    <script>
+        document.getElementById('startTime').addEventListener('input', function (e) {
+            var startTime = e.target.value;
+            var endTimeInput = document.getElementById('endTime');
+    
+            if (startTime) {
+                var startTimeDate = new Date();  // ok to use any date here
+                startTimeDate.setHours(startTime.split(':')[0], startTime.split(':')[1]);
+    
+                startTimeDate.setHours(startTimeDate.getHours() + 2); // Set end time to two hours after start time
+                startTimeDate.setMinutes(startTimeDate.getMinutes() + 15);
+
+    
+                var hours = startTimeDate.getHours();
+                var minutes = startTimeDate.getMinutes();
+    
+                // Format the hours and minutes to ensure they are always two digits
+                hours = hours < 10 ? '0' + hours : hours;
+                minutes = minutes < 10 ? '0' + minutes : minutes;
+    
+                endTimeInput.value = hours + ':' + minutes;
+            } else {
+                endTimeInput.value = ''; // Clear the end time if no start time is selected
+            }
+        });
+    </script>    
 
 
 

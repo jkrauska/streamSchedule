@@ -1,7 +1,22 @@
 #!/bin/bash
 
 source .venv/bin/activate
-export FLASK_APP=main.py  # Set the FLASK_APP environment variable to your main Flask application file
-export FLASK_ENV=development  # Set the FLASK_ENV environment variable to development mode
-flask run  --host=0.0.0.0
-#flask run --reload --host=0.0.0.0
+
+if ! test -f certs/fullchain.pem; then
+  echo "ERROR: Cert File DOES NOT EXIST."
+  exit 1
+fi
+
+if ! test -f secrets.json; then
+  echo "ERROR: secrets.json DOES NOT EXIST."
+  exit 1
+fi
+
+
+# SSL Server
+# NOTE: Lazy Apps is necessary for APScheduler
+uwsgi --master \
+    --https 0.0.0.0:8443,certs/fullchain.pem,certs/privkey.pem \
+    --enable-threads \
+    --lazy-apps \
+    --wsgi main:app 
