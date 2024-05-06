@@ -1,22 +1,20 @@
-import logging
 import json
+import logging
 import subprocess
-
-from streamSchedule import create_app
-from apscheduler.schedulers.background import BackgroundScheduler
-
-from flask_apscheduler import APScheduler
-from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
-from flask import request, redirect, url_for, render_template, abort, jsonify
-from flask_httpauth import HTTPBasicAuth
-from werkzeug.security import check_password_hash, generate_password_hash
-
-from apscheduler.triggers.date import DateTrigger
-from apscheduler.triggers.interval import IntervalTrigger
-from apscheduler.jobstores.base import ConflictingIdError
-
 from datetime import datetime, timedelta
+
+from apscheduler.jobstores.base import ConflictingIdError
+from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.interval import IntervalTrigger
+from flask import abort, redirect, render_template, request, url_for
+from flask_httpauth import HTTPBasicAuth
+from flask_bcrypt import Bcrypt
+
+from werkzeug.security import check_password_hash
+
 from names import generate_name
+from streamSchedule import create_app
 
 # Configure the logger
 logging.basicConfig(
@@ -29,30 +27,29 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-    # Read config from file
-with open('secrets.json', 'r') as file:
+# Read config from file
+with open("secrets.json", "r") as file:
     SECRETS = json.load(file)
 
 
 app = create_app()
+bcrypt = Bcrypt(app)
+
 auth = HTTPBasicAuth()
-process_dict={}
+process_dict = {}
+
 
 # Define a function to run a subprocess in Bash
 def run_bash_command(cmd):
 
-    # Start a subprocess (for example, a simple shell command)
-    proc = subprocess.run(cmd, shell=True)
-
-    # Store the process handle with a unique job identifier
-    process_dict[cmd] = proc
-    print(f"Started job {cmd} -- \n\n  {proc}\n\n")
-    print(process_dict)
+    logging.info(f"Starting {cmd}")
 
     try:
         subprocess.run(cmd, check=True, shell=True)
+        logging.info("Exited")
+
     except subprocess.CalledProcessError as e:
-        print(f"Error: {e}")
+        logging.error(f"Error: {e}")
 
 
 def stop_subprocess(job_id):
@@ -71,12 +68,11 @@ def input_cam_url(config):
     CAM_USER = config["CAM_USER"]
     CAM_PASS = config["CAM_PASS"]
     INPUT_CAM = f"rtsp://{CAM_USER}:{CAM_PASS}@{CAM_HOST}:554/Streaming/channels/101/"
-    return INPUT_CAM    
-
+    return INPUT_CAM
 
 
 def stream_game(duration=(60 * 4), key="", config={}, name=""):
-    logging.info(f"Starting a stream...")
+    logging.info("Starting a stream...")
     duration = int(duration)
 
     INPUT_CAM = input_cam_url(config)
@@ -101,22 +97,18 @@ def stream_game(duration=(60 * 4), key="", config={}, name=""):
     # Single output
     OUTPUT = f'-f flv "{OUTPUT_GC1}" '
 
-    # # Dual Output  ( COULD NOT GET WORKING, use two independent jobs)
-    # OUTPUT=f"""-f tee -map 0  "[f=flv:onfail=ignore]{OUTPUT_GC1}|[f=flv:onfail=ignore]{OUTPUT_GC2}" """
-
-    # cmd = "/usr/local/bin/ffmpeg "  # local compile, not working reliably
+    FFMPEG_BIN="/usr/bin/ffmpeg" # OS Package
+    # FFMPEG_BIN="/usr/local/bin/ffmpeg "  # local compile, not working reliably
 
     pretty_name = name.replace(" ", "_")
-    cmd = f'FFREPORT="level=32:file=logs/%p-%t-{pretty_name}.log" /usr/bin/ffmpeg '  # apt install
+    cmd = f'FFREPORT="level=32:file=logs/%p-%t-{pretty_name}.log" {FFMPEG_BIN} '  # apt install
 
     cmd += f"{LOG_OPTS} -thread_queue_size 256 "
     cmd += f"{RSTP_OPTS} -i {INPUT_CAM} "
     cmd += f"{VIDEO_OPTS} {AUDIO_OPTS} -t {duration} "
     cmd += f"{OUTPUT}"
 
-    logging.info(f"Running {cmd}")
     run_bash_command(cmd)
-
 
 
 def snapshot(config={}):
@@ -135,32 +127,30 @@ def format_datetime(value, format="%Y-%m-%d %H:%M:%S"):
         return ""
     return value.strftime(format)
 
-
+# Map jinja function for formatting dates/times
 app.jinja_env.filters["datetime"] = format_datetime
 
-# persist the schedule
-# app.config["SCHEDULER_JOBSTORES"] = {"default": SQLAlchemyJobStore(url="sqlite:///jobs.db")}
-
 # initialize scheduler
-#scheduler = APScheduler()
-
-#scheduler.init_app(app)
 jobstores = {"default": SQLAlchemyJobStore(url="sqlite:///jobs.db")}
 scheduler = BackgroundScheduler(jobstores=jobstores)
-
 scheduler.start()
+
 
 @auth.verify_password
 def verify_password(username, password):
-    authDict = SECRETS.get('AUTH', {})
-    if username in authDict and check_password_hash(authDict[username], password):
+    authDict = SECRETS.get("AUTH", {})
+
+#    if username in authDict and check_password_hash(authDict[username], password):
+
+    if username in authDict and  bcrypt.check_password_hash(authDict[username], password):
         return username
+
 
 # todo require auth
 @app.route("/")
-@auth.login_required
 def nohit():
-    abort(404)
+    return redirect("https://sfll.org/", code=302)
+    # abort(404)
 
 # List current jobs
 @app.route("/list")
@@ -169,12 +159,10 @@ def list():
     jobs = sorted(scheduler.get_jobs(), key=lambda x: x.next_run_time)
     return render_template("list.html.j2", jobs=jobs)
 
-
 @app.route("/add")
 @auth.login_required
 def add():
     return render_template("add.html.j2")
-
 
 @app.route("/submit", methods=["POST"])
 @auth.login_required
@@ -188,9 +176,16 @@ def submit():
     streamKey = request.form.get("streamKey")
 
     # Parse the date and time
-    date_obj = datetime.strptime(streamDate, "%Y-%m-%d").date()
-    start_time_obj = datetime.strptime(streamStartTime, "%H:%M").time()
-    end_time_obj = datetime.strptime(streamEndTime, "%H:%M").time()
+    try:
+        date_obj = datetime.strptime(streamDate, "%Y-%m-%d").date()
+    except ValueError:
+        abort(500, "Unable to understand your date, please do back and try again")
+
+    try:
+        start_time_obj = datetime.strptime(streamStartTime, "%H:%M").time()
+        end_time_obj = datetime.strptime(streamEndTime, "%H:%M").time()
+    except ValueError:
+        abort(500, "Unable to understand your time fields. Please go back and try again.")
 
     # Combine into a datetime object
     start_datetime_obj = datetime.combine(date_obj, start_time_obj)
@@ -202,7 +197,9 @@ def submit():
     logger.info(f"NAME:  {teamName}")
     logger.info(f"START: {start_datetime_obj}")
     logger.info(f"END:   {end_datetime_obj}")
-    logger.info(f"DUR:   {calculated_duration_seconds}s {calculated_duration_seconds / 60}min")
+    logger.info(
+        f"DUR:   {calculated_duration_seconds}s {calculated_duration_seconds / 60}min"
+    )
 
     new_stream(
         teamName,
@@ -212,6 +209,20 @@ def submit():
         config=SECRETS,
     )
     return redirect(url_for("list"))
+
+# # unprotected inputs
+# @app.route(f"/{SECRETS.get('LONG_STRING')}/list")
+# def list2():
+#     return list()
+
+# @app.route(f"/{SECRETS.get('LONG_STRING')}/add")
+# def add2():
+#     return add()
+
+# @app.route(f"/{SECRETS.get('LONG_STRING')}/submit",  methods=["POST"])
+# def submit2():
+#     return submit()
+# FIXME: Can we make the url_for a parameter?
 
 
 def new_stream(name=False, startTime=False, duration=60 * 5, key="", config={}):
@@ -236,7 +247,7 @@ def new_stream(name=False, startTime=False, duration=60 * 5, key="", config={}):
     try:
         scheduler.add_job(
             stream_game,
-            trigger='date', 
+            trigger="date",
             run_date=startTime,
             id=name,
             name=name,
@@ -245,7 +256,6 @@ def new_stream(name=False, startTime=False, duration=60 * 5, key="", config={}):
     except ConflictingIdError:
         logger.info(f"Job '{name}' Already Seen")
         pass
-
 
 
 # Background Job - Image Snapshots every 5m

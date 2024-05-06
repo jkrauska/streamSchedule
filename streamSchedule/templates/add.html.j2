@@ -10,10 +10,10 @@
 
 <body>
     <div class="container mt-5">
-        <h2>New Stream Setup</h2>
-        <form action="/submit" method="POST">
+        <h2>New Stream</h2>
+        <form action="./submit" method="POST">
             <div class="mb-3">
-                <label for="text-input" class="form-label">Team Name</label>
+                <label for="text-input" class="form-label">Team Name (example: Majors Cubs)</label>
                 <input type="text" class="form-control" id="text-input" name="teamName">
             </div>
             <div class="mb-3">
@@ -25,15 +25,15 @@
                 <input type="time" class="form-control" id="startTime" name="startTime">
             </div>
             <div class="mb-3">
-                <label for="endTime" class="form-label">Stream End Time</label>
+                <label for="endTime" class="form-label">Stream End Time (defaults to 2h 15m after Start)</label>
                 <input type="time" class="form-control" id="endTime" name="endTime">
             </div>
+            <p> </p>
             <div class="mb-3">
                 <label for="text-input" class="form-label">
                     <img class="bg-black rounded" width="60%"
-                        src="https://assets-global.website-files.com/60abbc75a1386aee71517203/61b8f942b53d396ccb93984e_Rebrand-app-icon.svg"></img>
-                    Stream Key<br>(usually starts with
-                    sk_us-east-1_...)</label>
+                        src="https://assets-global.website-files.com/60abbc75a1386aee71517203/61b8f942b53d396ccb93984e_Rebrand-app-icon.svg"></img><br>
+                    Stream Key (usually starts with sk_us-east-1_...)</label>
                 <input type="text" class="form-control" id="text-input" name="streamKey">
             </div>
             <button type="submit" class="btn btn-primary"><i class="bi bi-plus-circle-fill"
