@@ -140,8 +140,7 @@ scheduler.start()
 def verify_password(username, password):
     authDict = SECRETS.get("AUTH", {})
 
-#    if username in authDict and check_password_hash(authDict[username], password):
-
+    logger.info(f"Checking password for {username}")
     if username in authDict and  bcrypt.check_password_hash(authDict[username], password):
         return username
 
@@ -187,6 +186,11 @@ def submit():
     except ValueError:
         abort(500, "Unable to understand your time fields. Please go back and try again.")
 
+    # Store data to log
+    #data = f"{teamName},{start_datetime_obj},{end_datetime_obj},{streamKey}"
+    #with open('submissions.log', 'a') as file:
+    #    file.write(data + '\n')
+
     # Combine into a datetime object
     start_datetime_obj = datetime.combine(date_obj, start_time_obj)
     end_datetime_obj = datetime.combine(date_obj, end_time_obj)
@@ -194,12 +198,12 @@ def submit():
     calculated_duration = end_datetime_obj - start_datetime_obj
     calculated_duration_seconds = int(calculated_duration.total_seconds())
 
-    logger.info(f"NAME:  {teamName}")
-    logger.info(f"START: {start_datetime_obj}")
-    logger.info(f"END:   {end_datetime_obj}")
-    logger.info(
-        f"DUR:   {calculated_duration_seconds}s {calculated_duration_seconds / 60}min"
-    )
+    # logger.info(f"NAME:  {teamName}")
+    # logger.info(f"START: {start_datetime_obj}")
+    # logger.info(f"END:   {end_datetime_obj}")
+    # logger.info(
+    #     f"DUR:   {calculated_duration_seconds}s {calculated_duration_seconds / 60}min"
+    # )
 
     new_stream(
         teamName,

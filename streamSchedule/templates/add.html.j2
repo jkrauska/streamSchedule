@@ -6,38 +6,44 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>New Stream Request Form</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .required:after {
+            content: " *";
+            color: red;
+        }
+    </style>
 </head>
 
 <body>
     <div class="container mt-5">
-        <h2>New Stream</h2>
+        <h2>Schedule A New Stream</h2>
         <form action="./submit" method="POST">
             <div class="mb-3">
-                <label for="text-input" class="form-label">Team Name (example: Majors Cubs)</label>
-                <input type="text" class="form-control" id="text-input" name="teamName">
+                <label for="text-input" class="form-label"><b>Team:</b> (example: Majors Cubs)</label>
+                <input type="text" class="form-control" id="text-input" name="teamName" required>
             </div>
             <div class="mb-3">
-                <label for="date-input" class="form-label">Game Date</label>
-                <input type="date" class="form-control" id="date-input" name="date">
+                <label for="date-input" class="form-label"><b>Date:</b></label>
+                <input type="date" class="form-control" id="date-input" name="date" required>
             </div>
             <div class="mb-3">
-                <label for="startTime" class="form-label">Stream Start Time (ideally start BEFORE game)</label>
-                <input type="time" class="form-control" id="startTime" name="startTime">
+                <label for="startTime" class="form-label"><b>Start Time:</b> (example: 05:50 PM)</label>
+                <input type="time" class="form-control" id="startTime" name="startTime" required>
             </div>
             <div class="mb-3">
-                <label for="endTime" class="form-label">Stream End Time (defaults to 2h 15m after Start)</label>
-                <input type="time" class="form-control" id="endTime" name="endTime">
+                <label for="endTime" class="form-label"><b>End Time:</b> (sets to 2h 15m after Start, adjust if needed)</label>
+                <input type="time" class="form-control" id="endTime" name="endTime" required>
             </div>
             <p> </p>
             <div class="mb-3">
                 <label for="text-input" class="form-label">
                     <img class="bg-black rounded" width="60%"
                         src="https://assets-global.website-files.com/60abbc75a1386aee71517203/61b8f942b53d396ccb93984e_Rebrand-app-icon.svg"></img><br>
-                    Stream Key (usually starts with sk_us-east-1_...)</label>
-                <input type="text" class="form-control" id="text-input" name="streamKey">
+                    <b>Stream Key:</b> (usually starts with sk_us-east-1_...)</label>
+                <input type="text" class="form-control" id="text-input" name="streamKey" required>
             </div>
             <button type="submit" class="btn btn-primary"><i class="bi bi-plus-circle-fill"
-                    style="color: white; font-size: 1rem;"></i> Schedule
+                    style="color: white; font-size: 1rem;"></i>Submit This Stream
             </button>
         </form>
     </div>
