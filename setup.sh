@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 # Needed before uwsgi
 sudo apt-get install libssl-dev

@@ -1,5 +1,9 @@
 #!/bin/bash
 
+
+set -euo pipefail
+
+
 # certbot renew --post-hook "/path/to/your/script.sh"
 
 CERTDIR=/home/stream411/streamSchedule/certs/

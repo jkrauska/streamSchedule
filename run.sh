@@ -1,4 +1,6 @@
 #!/bin/bash
+set -euo pipefail
+
 
 source .venv/bin/activate
 
@@ -12,6 +14,7 @@ if ! test -f secrets.json; then
   exit 1
 fi
 
+mkdir -p streamSchedule/static/images
 
 # SSL Server
 # NOTE: Lazy Apps is necessary for APScheduler
